@@ -9,7 +9,9 @@ import {
     Check
 } from 'lucide-react';
 
-export default function SignupFlow() {
+import { Suspense } from 'react';
+
+function SignupFlow() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const initialPlanId = searchParams.get('planId');
@@ -316,5 +318,17 @@ export default function SignupFlow() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function SignupPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <Loader2 className="animate-spin text-indigo-600" size={48} />
+            </div>
+        }>
+            <SignupFlow />
+        </Suspense>
     );
 }
