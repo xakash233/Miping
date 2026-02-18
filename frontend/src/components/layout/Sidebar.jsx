@@ -2,9 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-    LayoutDashboard, Wallet, Users, Calendar, Inbox, MessageSquare,
-    FileText, Folder, Type, BarChart2, LogOut, X, Box,
-    ChevronDown, PlusCircle, Globe, FileCode, Database, Layers
+    LayoutDashboard, Users, FileText, Layers, LogOut, X, Box,
+    ChevronDown, PlusCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -41,10 +40,12 @@ const Sidebar = ({ isOpen, onClose }) => {
     const pathname = usePathname();
     const router = useRouter();
     const [userRole, setUserRole] = useState(null);
+    const [userName, setUserName] = useState(null);
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
         setUserRole(Cookies.get('user_role'));
+        setUserName(Cookies.get('user_name'));
         setMounted(true);
     }, []);
 
@@ -99,32 +100,25 @@ const Sidebar = ({ isOpen, onClose }) => {
                 {/* Scrollable Menu */}
                 <div className="flex-1 px-3 py-4 overflow-y-auto scrollbar-hide">
                     <SidebarGroup title="WORKSPACE">
-                        <SidebarItem icon={LayoutDashboard} label="Dashboard" href="/" active={isActive('/')} />
-                        <SidebarItem icon={Wallet} label="My Wallet" href="/wallet" active={isActive('/wallet')} />
+                        <SidebarItem icon={LayoutDashboard} label="Dashboard" href="/dashboard" active={isActive('/dashboard')} />
                     </SidebarGroup>
 
                     <SidebarGroup title="APPS">
-                        <SidebarItem icon={Users} label="Users" href="/contacts" active={isActive('/contacts')} hasSubmenu />
-                        <SidebarItem icon={Folder} label="My Project's" href="/campaigns" active={isActive('/campaigns')} hasSubmenu />
-                        <SidebarItem icon={Calendar} label="My Calendar" href="#" active={false} />
-                        <SidebarItem icon={Inbox} label="Inbox" href="/inbox" active={isActive('/inbox')} />
-                        <SidebarItem icon={MessageSquare} label="Chat" href="#" active={false} />
-                        <SidebarItem icon={FileText} label="Blog Article" href="#" active={false} />
+                        <SidebarItem icon={Users} label="Contacts" href="/contacts" active={isActive('/contacts')} />
+                        <SidebarItem icon={FileText} label="Templates" href="/templates" active={isActive('/templates')} />
                     </SidebarGroup>
 
-                    <SidebarGroup title="PLUGINS">
-                        <SidebarItem icon={Layers} label="Bootstrap UI" href="#" active={false} hasSubmenu />
-                        <SidebarItem icon={Type} label="Font icon" href="#" active={false} hasSubmenu />
-                        <SidebarItem icon={BarChart2} label="Charts" href="/analytics" active={isActive('/analytics')} hasSubmenu />
-                        <SidebarGroup title="Data Management" className="mt-4">
-                            <SidebarItem icon={Database} label="Datatables" href="#" active={false} />
+                    {userRole === 'SUPER_ADMIN' && (
+                        <SidebarGroup title="PLATFORM ADMIN">
+                            <SidebarItem icon={Layers} label="Plans" href="/admin/plans" active={isActive('/admin/plans')} />
+                            <SidebarItem icon={Users} label="Subscriptions" href="/admin/subscriptions" active={isActive('/admin/subscriptions')} />
                         </SidebarGroup>
-                    </SidebarGroup>
+                    )}
                 </div>
 
                 {/* Footer Actions */}
                 <div className="p-4 border-t border-gray-50 space-y-2 shrink-0">
-                    <SidebarItem icon={Box} label="Settings" href="/settings" active={isActive('/settings')} />
+                    <SidebarItem icon={Box} label="Settings" href="/settings/whatsapp" active={isActive('/settings/whatsapp')} />
                     <button
                         onClick={handleLogout}
                         className="flex items-center gap-3 px-4 py-2.5 text-red-500 hover:bg-red-50 rounded-lg w-full transition-colors group"

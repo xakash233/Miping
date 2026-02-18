@@ -15,37 +15,23 @@ const webhookRoutes = require('./modules/webhook/routes');
 const adminRoutes = require('./modules/admin/routes');
 const paymentRoutes = require('./modules/payments/routes');
 const tenantRoutes = require('./modules/tenants/routes');
+const planRoutes = require('./modules/plans/routes');
 
 const app = express();
 
-// Security Middleware
+// Middleware
 app.use(helmet());
-
-//  Production CORS Setup
-app.use(cors({
-    origin: [
-        "http://localhost:3000",
-        "https://miping.vercel.app"
-    ],
-    credentials: true
+app.use(cors());
+app.use(express.json({
+    limit: '10mb',
+    verify: (req, res, buf) => {
+        req.rawBody = buf.toString();
+    }
 }));
-
-// Body Parsers
-app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Logging (Development only)
 if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));
 }
-
-// Health Check Route
-app.get("/", (req, res) => {
-    res.status(200).json({
-        status: "success",
-        message: "Miping Backend is running "
-    });
-});
 
 // Routes
 app.use('/auth', authRoutes);
@@ -57,9 +43,17 @@ app.use('/webhook', webhookRoutes);
 app.use('/admin', adminRoutes);
 app.use('/payments', paymentRoutes);
 app.use('/tenants', tenantRoutes);
+app.use('/plans', planRoutes);
+app.use('/whatsapp', require('./modules/whatsapp/routes'));
+app.use('/dashboard', require('./modules/dashboard/routes'));
 
-// Handle Unknown Routes
-app.all('*', (req, res, next) => {
+// Health Check (Public)
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'UP', timestamp: new Date() });
+});
+
+// 404 Handler
+app.all(/(.*)/, (req, res, next) => {
     next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
@@ -67,4 +61,3 @@ app.all('*', (req, res, next) => {
 app.use(globalErrorHandler);
 
 module.exports = app;
-

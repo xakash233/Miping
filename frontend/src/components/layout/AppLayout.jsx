@@ -8,10 +8,11 @@ import { usePathname } from 'next/navigation';
 const AppLayout = ({ children }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const pathname = usePathname();
-    const isLoginPage = pathname === '/login';
+    const publicPaths = ['/login', '/', '/pricing', '/signup'];
+    const isPublicPage = publicPaths.includes(pathname);
 
-    if (isLoginPage) {
-        return <div className="font-sans text-gray-900">{children}</div>;
+    if (isPublicPage) {
+        return <div className="font-sans text-gray-900 overflow-x-hidden">{children}</div>;
     }
 
     return (

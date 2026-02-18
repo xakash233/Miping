@@ -23,6 +23,12 @@ class ContactRepository {
         return rows;
     }
 
+    async findById(tenantId, id) {
+        const query = `SELECT * FROM contacts WHERE tenant_id = $1 AND id = $2`;
+        const { rows } = await db.query(query, [tenantId, id]);
+        return rows[0];
+    }
+
     // Bulk create/upsert could be optimized with unnest or jsonb_to_recordset
     // For MVP, we might loop or use a single transaction.
     // Implementation below uses a loop inside a transaction for clarity/safety, 

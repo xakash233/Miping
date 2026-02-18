@@ -49,6 +49,17 @@ class MessageRepository {
     return rows[0];
   }
 
+  async updateMessageStatus(id, status, timestamp) {
+    const query = `
+            UPDATE messages
+            SET status = $2, updated_at = $3
+            WHERE id = $1
+            RETURNING *;
+        `;
+    const { rows } = await db.query(query, [id, status, timestamp || new Date()]);
+    return rows[0];
+  }
+
   async findAllJobs(tenantId) {
     const query = `
             SELECT j.*, t.name as template_name, c.name as contact_name, c.phone_e164

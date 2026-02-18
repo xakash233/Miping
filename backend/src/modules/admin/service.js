@@ -1,18 +1,18 @@
 const adminRepository = require('./repository');
 const authService = require('../auth/service');
 const db = require('../../db');
+const planService = require('../plans/service');
+const emailService = require('../../services/email');
 
 class AdminService {
     async getDashboardStats() {
+        // ... (unchanged)
         const stats = await adminRepository.getSystemStats();
-
-        // Extended logic if needed, e.g., external service health checks
-        const uptime = process.uptime();
-
+        // ...
         return {
             ...stats,
             system: {
-                uptime: `${Math.floor(uptime / 60)} minutes`,
+                uptime: `${Math.floor(process.uptime() / 60)} minutes`,
                 status: 'HEALTHY',
                 timestamp: new Date().toISOString()
             }
@@ -20,8 +20,24 @@ class AdminService {
     }
 
     async createTenantAdmin(data) {
-        // Reuse auth service logic (this handles tenant creation + admin user creation)
-        return await authService.registerTenant(data);
+        // 1. Create Tenant & User
+        const { tenant, user, token } = await authService.registerTenant(data);
+
+        // 2. Assign Plan (if provided)
+        if (data.planId) {
+            await planService.assignPlan(tenant.id, data.planId, 'COMPLETED');
+        }
+
+        // 3. Send Welcome Email
+        // We only send email if created by Super Admin (which this method is for)
+        await emailService.sendWelcomeEmail(
+            user.email,
+            user.full_name,
+            user.email,
+            data.adminPassword // We need the raw password here. It's passed in data.
+        );
+
+        return { tenant, user };
     }
 
     async getAllTenants() {

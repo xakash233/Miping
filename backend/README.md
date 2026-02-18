@@ -2,44 +2,69 @@
 
 A production-ready, multi-tenant backend for WhatsApp notifications and escalations. Built with Node.js, Express, and PostgreSQL.
 
-## Features
+## 🚀 Features
 
-- **Multi-Tenancy**: Data isolation per tenant using `tenant_id`.
-- **RBAC Authentication**: RS256 JWT-based auth with `SUPER_ADMIN`, `ADMIN`, and `SUB_ADMIN` roles.
-- **Financial Integrity**: Atomic debit/credit transactions with row locking (`FOR UPDATE`) to prevent race conditions.
-- **Scheduler**: `node-cron` integrated for just-in-time message dispatching.
-- **Resilience**: Webhook handling with auto-refund logic on delivery failures.
+### 1. Super Admin (Platform Owner)
+- **Subscription Management**: Define plans (Starter, Pro, Enterprise) with limits.
+- **Tenant Provisioning**: Create tenants and assign plans manually.
+- **Automated Onboarding**: System sends welcome emails with credentials to new tenants.
 
-## Prerequisites
+### 2. Tenant (Business Owner)
+- **WhatsApp Integration**: 
+    - **Connect**: One-click OAuth connection to WhatsApp Business.
+    - **Templates**: Create, Edit, and Sync templates with Meta.
+    - **Messaging**: Send campaigns and viewing history.
+- **Plan View**: View current subscription details and limits.
 
-- **Node.js**: v20+
-- **PostgreSQL**: v14+
+### 3. Developer / API
+- **Modular Architecture**: Separate modules for `auth`, `plans`, `tenants`, `whatsapp`.
+- **Live Sync**: Webhooks handle real-time status updates from Meta (Templates, Messages).
 
-> **Deep Dive**: For a detailed look at the financial logic, schema, and architecture, see the [Technical Guide](TECHNICAL_GUIDE.md).
+## 🛠 Setup & Configuration
 
-## Quick Start
+### Prerequisites
+1.  **PostgreSQL**: Ensure DB is running.
+2.  **Redis**: For queuing (optional but recommended).
+3.  **Meta App**: Created in Facebook Developers Console.
 
-1.  **Install Dependencies**
-    ```bash
-    npm install
-    ```
+### Environment Variables (.env)
+```env
+# Database
+DB_HOST=localhost
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_NAME=whatsapp_backend
 
-2.  **Environment Setup**
-    Copy `.env.example` to `.env` and update your database credentials:
-    ```bash
-    cp .env.example .env
-    ```
+# Authentication
+JWT_PRIVATE_KEY_PATH=keys/private.pem
+JWT_PUBLIC_KEY_PATH=keys/public.pem
 
-3.  **Database Initialization**
-    This script creates the database (if missing) and applies the schema:
-    ```bash
-    node src/db/init.js
-    ```
+# Encryption (32 chars)
+AES_SECRET=super_secret_aes_key_32_chars_12
 
-4.  **Start Server**
-    ```bash
-    npm run dev
-    ```
+# Meta / WhatsApp
+META_API_VERSION=v19.0
+FACEBOOK_APP_ID=your_app_id
+FACEBOOK_APP_SECRET=your_app_secret
+META_WEBHOOK_VERIFY_TOKEN=your_verify_token
+
+# Email (SMTP)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=your_app_password
+```
+
+### Running the App
+1.  **Install**: `npm install`
+2.  **Migrate**: `node scripts/run_migration.js` (Run for all migration files)
+3.  **Start**: `npm run dev`
+
+### API Documentation
+- **Plans**: `GET /plans`, `POST /plans` (Admin)
+- **Tenants**: `POST /admin/create-tenant` (Admin)
+- **WhatsApp**: `POST /whatsapp/connect` (OAuth Code) 
+
     *Server runs on port 3000 by default.*
 
 5.  **Verify Installation**

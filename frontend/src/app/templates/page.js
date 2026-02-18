@@ -26,7 +26,7 @@ export default function TemplatesPage() {
     const fetchTemplates = async () => {
         try {
             const token = Cookies.get('token');
-            const res = await axios.get('http://localhost:3000/templates', {
+            const res = await axios.get('http://localhost:8000/templates', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.data.success) {
@@ -48,7 +48,15 @@ export default function TemplatesPage() {
 
         try {
             const token = Cookies.get('token');
-            const res = await axios.post('http://localhost:3000/templates', formData, {
+            const payload = {
+                name: formData.name,
+                category: formData.category,
+                language: formData.language,
+                content: formData.body,
+                variables: [] // TODO: Extract variables
+            };
+
+            const res = await axios.post('http://localhost:8000/templates', payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -108,7 +116,7 @@ export default function TemplatesPage() {
                                         <FileText size={24} />
                                     </div>
                                     <div className={`text-[10px] font-black tracking-widest px-3 py-1 rounded-full ${tpl.status === 'APPROVED' ? 'bg-green-50 text-green-600' :
-                                            tpl.status === 'REJECTED' ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-orange-600'
+                                        tpl.status === 'REJECTED' ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-orange-600'
                                         }`}>
                                         {tpl.status}
                                     </div>
@@ -177,7 +185,7 @@ export default function TemplatesPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Content (Use {{ 1}}, {{ 2}} for variables)</label>
+                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Content (Use {'{{1}}'}, {'{{2}}'} for variables)</label>
                                 <textarea
                                     className="w-full px-4 py-4 bg-gray-50 border border-transparent focus:border-blue-500 focus:bg-white rounded-2xl outline-none transition-all text-sm font-medium min-h-[120px]"
                                     placeholder="Hello {{1}}, thanks for choosing us!"

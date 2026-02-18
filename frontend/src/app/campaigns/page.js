@@ -28,7 +28,7 @@ export default function CampaignsPage() {
     const fetchHistory = async () => {
         try {
             const token = Cookies.get('token');
-            const res = await axios.get('http://localhost:3000/messages/history', {
+            const res = await axios.get('http://localhost:8000/messages/history', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.data.success) setJobs(res.data.data);
@@ -43,11 +43,11 @@ export default function CampaignsPage() {
         try {
             const token = Cookies.get('token');
             const [cRes, tRes] = await Promise.all([
-                axios.get('http://localhost:3000/contacts', { headers: { Authorization: `Bearer ${token}` } }),
-                axios.get('http://localhost:3000/templates', { headers: { Authorization: `Bearer ${token}` } })
+                axios.get('http://localhost:8000/contacts', { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get('http://localhost:8000/templates', { headers: { Authorization: `Bearer ${token}` } })
             ]);
             setContacts(cRes.data.data);
-            setTemplates(tRes.data.data.filter(t => t.status === 'APPROVED'));
+            setTemplates(tRes.data.data.filter(t => t.status === 'APPROVED' || t.status === 'PENDING'));
         } catch (err) {
             console.error('Failed to fetch dropdowns', err);
         }
@@ -65,7 +65,7 @@ export default function CampaignsPage() {
 
         try {
             const token = Cookies.get('token');
-            const res = await axios.post('http://localhost:3000/messages/schedule', formData, {
+            const res = await axios.post('http://localhost:8000/messages/schedule', formData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -149,7 +149,7 @@ export default function CampaignsPage() {
                                         </td>
                                         <td className="px-8 py-6">
                                             <div className={`flex items-center gap-2 text-[10px] font-black tracking-widest px-3 py-1 rounded-full w-fit ${job.status === 'SENT' ? 'bg-green-50 text-green-600' :
-                                                    job.status === 'PENDING' ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'
+                                                job.status === 'PENDING' ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'
                                                 }`}>
                                                 {job.status === 'PENDING' && <Clock size={10} />}
                                                 {job.status === 'SENT' && <CheckCircle2 size={10} />}

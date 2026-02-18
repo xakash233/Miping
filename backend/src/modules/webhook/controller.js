@@ -1,72 +1,66 @@
-const messageRepository = require('../messages/repository');
-const billingService = require('../billing/service');
-const catchAsync = require('../../utils/catchAsync');
+const crypto = require('crypto');
+const kafka = require('../../services/kafka');
 
-exports.handleMetaWebhook = catchAsync(async (req, res, next) => {
-    // Meta webhook structure is complex. Simplify for this MVP.
-    // Assume generic payload: { object: 'whatsapp_business_account', entries: [...] }
-    // We'll process a simplified notification body for demonstration.
-    // body: { status: 'failed' | 'delivered', metaMessageId: '...', error: '...' }
+const APP_SECRET = process.env.FACEBOOK_APP_SECRET;
+const WEBHOOK_VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN || 'mytoken';
+const WEBHOOK_TOPIC = 'meta.webhooks';
 
-    const { status, metaMessageId, error } = req.body;
-
-    if (!status || !metaMessageId) {
-        // Return 200 to acknowledge webhook even if invalid, to prevent retries loop
-        return res.status(200).send('OK');
-    }
-
-    const message = await messageRepository.findByMetaMessageId(metaMessageId);
-
-    if (!message) {
-        console.warn(`Webhook received for unknown message: ${metaMessageId}`);
-        return res.status(200).send('OK');
-    }
-
-    // Idempotency: If already in final state, ignore? 
-    // 'SENT' -> 'DELIVERED' -> 'READ'
-    // 'SENT' -> 'FAILED'
-    if (message.status === 'FAILED') {
-        return res.status(200).send('OK');
-    }
-
-    // Update status
-    // We need a method in messageRepository to update message status by ID, or just use raw query here if simple.
-    // messageRepository doesn't have updateMessageStatus yet, only updateJobStatus.
-    // I should add it or just run update here. 
-    // Actually, I'll update the job status too? The job tracks the overall status.
-
-    await messageRepository.updateJobStatus(message.job_id, status.toUpperCase(), error);
-    // Also update message table? Yes.
-
-    // Trigger Refund if failed
-    if (status === 'failed') {
-        // Need cost. Job has cost.
-        // Fetch job to get cost?
-        // messageRepository.findJobById... (not implemented but easy to add)
-        // Or just assume standard cost or stored in message? Schema doesn't have cost in message, only job.
-
-        // Let's rely on job update returning the job row which has cost.
-        const updatedJob = await messageRepository.updateJobStatus(message.job_id, 'FAILED', error);
-
-        if (updatedJob && updatedJob.cost > 0) {
-            try {
-                await billingService.refundMessage(updatedJob.tenant_id, parseFloat(updatedJob.cost), updatedJob.id);
-            } catch (err) {
-                console.error('REFUND FAILED in Webhook', err);
+exports.handleMetaWebhook = async (req, res, next) => {
+    try {
+        // 1. Validation (Signature)
+        // If APP_SECRET is missing, we might skip signature check in dev, but log warning.
+        if (APP_SECRET) {
+            const signature = req.headers['x-hub-signature-256'];
+            if (!signature) {
+                console.warn('Missing X-Hub-Signature-256');
+                return res.sendStatus(401);
             }
+
+            const elements = signature.split('=');
+            const signatureHash = elements[1];
+            const expectedHash = crypto
+                .createHmac('sha256', APP_SECRET)
+                .update(req.rawBody || JSON.stringify(req.body))
+                .digest('hex');
+
+            if (signatureHash !== expectedHash) {
+                console.warn('Invalid Webhook Signature');
+                return res.sendStatus(403);
+            }
+        } else {
+            console.warn('FACEBOOK_APP_SECRET not set, skipping signature validation.');
         }
+
+        // 2. Push to Kafka (Async Processing)
+        const body = req.body;
+
+        // Handling subscription verification logic is usually GET, so this is POST => Payload
+        if (body.object === 'whatsapp_business_account') {
+            for (const entry of body.entry) {
+                // Partition by WABA ID to keep order per account
+                const wabaId = entry.id;
+                await kafka.sendToQueue(WEBHOOK_TOPIC, wabaId, entry);
+            }
+        } else {
+            // Unknown event type, just acknowledge
+        }
+
+        res.sendStatus(200);
+
+    } catch (err) {
+        console.error('Webhook Error:', err);
+        // Always return 200 to Meta to prevent retries of bad payloads
+        res.sendStatus(200);
     }
+};
 
-    res.status(200).send('OK');
-});
-
-// Verification endpoint for Meta (GET)
 exports.verifyWebhook = (req, res) => {
     const mode = req.query['hub.mode'];
     const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
 
-    if (mode === 'subscribe' && token === (process.env.META_WEBHOOK_VERIFY_TOKEN || 'mytoken')) {
+    if (mode === 'subscribe' && token === WEBHOOK_VERIFY_TOKEN) {
+        console.log('Webhook Verified!');
         res.status(200).send(challenge);
     } else {
         res.sendStatus(403);

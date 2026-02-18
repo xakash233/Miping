@@ -26,8 +26,8 @@ export default function LoginPage() {
         setError('');
 
         try {
-            // Assuming Backend is running on port 3000
-            const response = await axios.post('http://localhost:3000/auth/login', {
+            // Assuming Backend is running on port 8000
+            const response = await axios.post('http://localhost:8000/auth/login', {
                 email: formData.email,
                 password: formData.password
             });
@@ -42,9 +42,9 @@ export default function LoginPage() {
 
             // Redirect based on role
             if (user.role === 'SUPER_ADMIN') {
-                router.push('/'); // Or /admin/dashboard if separate
+                router.push('/dashboard');
             } else {
-                router.push('/');
+                router.push('/dashboard');
             }
 
         } catch (err) {

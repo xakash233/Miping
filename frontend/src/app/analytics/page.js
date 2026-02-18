@@ -42,8 +42,8 @@ export default function AnalyticsPage() {
             const token = Cookies.get('token');
             const role = Cookies.get('user_role');
             const endpoint = role === 'SUPER_ADMIN'
-                ? 'http://localhost:3000/admin/dashboard'
-                : 'http://localhost:3000/tenants/dashboard';
+                ? 'http://localhost:8000/admin/dashboard'
+                : 'http://localhost:8000/tenants/dashboard';
 
             const res = await axios.get(endpoint, {
                 headers: { Authorization: `Bearer ${token}` }

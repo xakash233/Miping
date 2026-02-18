@@ -34,3 +34,19 @@ exports.login = catchAsync(async (req, res, next) => {
         data: result
     });
 });
+exports.initSignup = catchAsync(async (req, res, next) => {
+    const result = await authService.initRegistration(req.body);
+    res.status(200).json({ success: true, ...result });
+});
+
+exports.verifyOTP = catchAsync(async (req, res, next) => {
+    const { email, otp } = req.body;
+    const result = await authService.verifyOTP(email, otp);
+    res.status(200).json({ success: true, ...result });
+});
+
+exports.completeSignup = catchAsync(async (req, res, next) => {
+    const { verificationToken, paymentData } = req.body;
+    const result = await authService.completeRegistration(verificationToken, paymentData);
+    res.status(201).json({ success: true, data: result });
+});
