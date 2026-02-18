@@ -18,10 +18,6 @@ export default function SubscriptionsManagement() {
         planId: ''
     });
 
-    useEffect(() => {
-        fetchData();
-    }, []);
-
     const fetchData = async () => {
         try {
             const [tenantsRes, plansRes] = await Promise.all([
@@ -36,6 +32,11 @@ export default function SubscriptionsManagement() {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        fetchData();
+    }, []);
 
     const handleCreate = async (e) => {
         e.preventDefault();

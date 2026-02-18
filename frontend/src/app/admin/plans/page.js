@@ -15,10 +15,6 @@ export default function PlansManagement() {
         message_limit: 1000, contact_limit: 500, duration_days: 30
     });
 
-    useEffect(() => {
-        fetchPlans();
-    }, []);
-
     const fetchPlans = async () => {
         try {
             const res = await axios.get('/plans');
@@ -29,6 +25,11 @@ export default function PlansManagement() {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        fetchPlans();
+    }, []);
 
     const handleEdit = (plan) => {
         setIsEditing(true);

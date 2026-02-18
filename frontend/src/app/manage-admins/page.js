@@ -255,7 +255,7 @@ export default function ManageAdminsPage() {
 
                         <h2 className="text-2xl font-bold text-gray-800 mb-2 italic">Confirm Deletion</h2>
                         <p className="text-gray-500 text-sm mb-8">
-                            You are about to delete <span className="font-bold text-gray-800 underline">"{tenantToDelete?.name}"</span>.
+                            You are about to delete <span className="font-bold text-gray-800 underline">&quot;{tenantToDelete?.name}&quot;</span>.
                             This action is permanent and will wipe all associated data.
                         </p>
 
@@ -279,8 +279,8 @@ export default function ManageAdminsPage() {
                             <button
                                 onClick={confirmDelete}
                                 className={`w-full py-5 rounded-2xl font-bold text-white transition-all shadow-xl ${verificationNumber === '7904549387'
-                                        ? 'bg-red-600 hover:bg-red-700 shadow-red-100'
-                                        : 'bg-gray-200 cursor-not-allowed'
+                                    ? 'bg-red-600 hover:bg-red-700 shadow-red-100'
+                                    : 'bg-gray-200 cursor-not-allowed'
                                     }`}
                                 disabled={verificationNumber !== '7904549387'}
                             >

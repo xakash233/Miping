@@ -13,7 +13,9 @@ const Header = ({ onMenuClick }) => {
     const [isDarkMode, setIsDarkMode] = useState(false);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setUserName(Cookies.get('user_name') || 'Michelle');
+         
         setUserRole(Cookies.get('user_role') || 'Admin');
     }, []);
 

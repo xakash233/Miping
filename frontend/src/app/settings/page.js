@@ -13,13 +13,16 @@ export default function SettingsPage() {
     const [activeTab, setActiveTab] = useState('profile');
     const [saved, setSaved] = useState(false);
     const [mounted, setMounted] = useState(false);
+    const [nodeNumber, setNodeNumber] = useState(0);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setUser({
             name: Cookies.get('user_name') || 'Administrator',
             email: Cookies.get('email') || 'system@miping.com',
             role: Cookies.get('user_role') || 'ADMIN'
         });
+        setNodeNumber(Math.floor(Math.random() * 9000) + 1000);
         setMounted(true);
     }, []);
 
@@ -130,7 +133,7 @@ export default function SettingsPage() {
 
                             {/* Actions */}
                             <div className="pt-8 border-t border-gray-50 flex items-center justify-between">
-                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight italic">Authenticated Session: Node #{Math.floor(Math.random() * 9000) + 1000}</p>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight italic">Authenticated Session: Node #{nodeNumber}</p>
                                 <button
                                     onClick={handleSave}
                                     className="flex items-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-blue-100 hover:bg-blue-700 uppercase text-xs tracking-widest"

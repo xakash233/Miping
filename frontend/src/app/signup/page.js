@@ -300,7 +300,7 @@ export default function SignupFlow() {
                                 <div>
                                     <h2 className="text-4xl font-black text-gray-900">Payment Successful!</h2>
                                     <p className="text-gray-500 mt-4 leading-relaxed">
-                                        Welcome abroad! We've sent your <b>Admin Credentials</b> <br />
+                                        Welcome aboard! We&apos;ve sent your <b>Admin Credentials</b> <br />
                                         to your email: <b>{formData.email}</b>
                                     </p>
                                 </div>
