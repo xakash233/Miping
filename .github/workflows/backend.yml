@@ -21,6 +21,7 @@ jobs:
           script: |
             cd ~/Miping/backend
             git pull origin main
+            echo "${{ secrets.BACKEND_ENV }}" > .env
             docker compose down
             docker compose up -d --build
 
