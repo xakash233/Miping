@@ -24,4 +24,8 @@ jobs:
             echo "${{ secrets.BACKEND_ENV }}" > .env
             docker compose down
             docker compose up -d --build
+            echo "Waiting for PostgreSQL to start..."
+            sleep 5
+            docker compose exec -T backend node src/db/init.js
+            docker compose exec -T backend node src/db/migrate.js
 

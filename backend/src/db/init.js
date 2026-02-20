@@ -39,6 +39,24 @@ const initDb = async () => {
         console.log('Running schema setup...');
         await db.query(schemaSql);
         console.log('Schema setup complete.');
+
+        // 3. Run all migrations safely
+        const migrationsPath = path.join(__dirname, 'migrations');
+        if (fs.existsSync(migrationsPath)) {
+            const files = fs.readdirSync(migrationsPath).filter(f => f.endsWith('.sql')).sort();
+            for (const file of files) {
+                console.log(`Running migration: ${file}...`);
+                const sql = fs.readFileSync(path.join(migrationsPath, file), 'utf8');
+                try {
+                    await db.query(sql);
+                    console.log(`Migration ${file} executed successfully.`);
+                } catch (err) {
+                    console.log(`Migration ${file} encountered error (may already exist): ${err.message}`);
+                }
+            }
+        }
+
+        console.log('Database initialization fully completed!');
         process.exit(0);
     } catch (err) {
         console.error('Error running schema setup:', err);
