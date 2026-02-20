@@ -4,7 +4,7 @@ import axios from '@/lib/axios';
 import {
     MessageSquare, Users as UsersIcon, Send,
     TrendingUp, Activity, CreditCard, ChevronRight,
-    CheckCircle, Loader2, Sparkles, Smartphone, Key, Hash
+    CheckCircle, Loader2, Sparkles, Smartphone, Key, Hash, Facebook
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -56,6 +56,24 @@ export default function Dashboard() {
     });
 
     useEffect(() => {
+        // Load Facebook SDK
+        window.fbAsyncInit = function () {
+            window.FB.init({
+                appId: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '544075195325595',
+                cookie: true,
+                xfbml: true,
+                version: 'v19.0'
+            });
+        };
+
+        (function (d, s, id) {
+            var js, fjs = d.getElementsByTagName(s)[0];
+            if (d.getElementById(id)) { return; }
+            js = d.createElement(s); js.id = id;
+            js.src = "https://connect.facebook.net/en_US/sdk.js";
+            fjs.parentNode.insertBefore(js, fjs);
+        }(document, 'script', 'facebook-jssdk'));
+
         const fetchDashboard = async () => {
             try {
                 const res = await axios.get('/dashboard/stats');
@@ -79,19 +97,43 @@ export default function Dashboard() {
         fetchDashboard();
     }, []);
 
-    const handleMetaConnect = async (e) => {
+    const handleMetaConnect = (e) => {
         e.preventDefault();
+        if (!metaForm.wabaId || !metaForm.phoneNumberId) {
+            setMetaError('Please enter WABA ID and Phone Number ID first.');
+            return;
+        }
+
         setMetaLoading(true);
         setMetaError('');
-        try {
-            await axios.post('/whatsapp/connect', metaForm);
-            setMetaConnected(true);
-            setShowMetaModal(false);
-        } catch (err) {
-            setMetaError(err.response?.data?.message || 'Failed to connect Meta account.');
-        } finally {
+
+        if (typeof window.FB === 'undefined') {
+            setMetaError('Facebook SDK is not loaded. Please disable adblockers or try again.');
             setMetaLoading(false);
+            return;
         }
+
+        window.FB.login(function (response) {
+            if (response.authResponse) {
+                const shortLivedToken = response.authResponse.accessToken;
+
+                axios.post('/whatsapp/connect', {
+                    wabaId: metaForm.wabaId,
+                    phoneNumberId: metaForm.phoneNumberId,
+                    shortLivedToken: shortLivedToken
+                }).then(() => {
+                    setMetaConnected(true);
+                    setShowMetaModal(false);
+                }).catch(err => {
+                    setMetaError(err.response?.data?.message || 'Failed to connect Meta account.');
+                }).finally(() => {
+                    setMetaLoading(false);
+                });
+            } else {
+                setMetaError('Facebook login was cancelled or failed.');
+                setMetaLoading(false);
+            }
+        }, { scope: 'whatsapp_business_management,whatsapp_business_messaging' });
     };
 
     return (
@@ -264,27 +306,17 @@ export default function Dashboard() {
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Permanent Access Token</label>
-                                        <div className="relative">
-                                            <Key className="absolute left-3 top-3 text-gray-400" size={18} />
-                                            <input
-                                                type="password"
-                                                required
-                                                value={metaForm.permanentToken}
-                                                onChange={(e) => setMetaForm({ ...metaForm, permanentToken: e.target.value })}
-                                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition font-medium text-sm"
-                                                placeholder="EAAGm0..."
-                                            />
-                                        </div>
-                                    </div>
-
                                     <button
                                         type="submit"
                                         disabled={metaLoading}
-                                        className="w-full mt-6 bg-indigo-600 text-white font-bold py-4 rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 flex items-center justify-center gap-2"
+                                        className="w-full mt-6 bg-[#1877F2] text-white font-bold py-4 rounded-xl hover:bg-[#166fe5] transition shadow-lg shadow-blue-100 flex items-center justify-center gap-3"
                                     >
-                                        {metaLoading ? <Loader2 className="animate-spin" size={20} /> : 'Securely Connect API'}
+                                        {metaLoading ? <Loader2 className="animate-spin" size={20} /> : (
+                                            <>
+                                                <Facebook className="text-white" size={24} />
+                                                <span>Connect with Facebook</span>
+                                            </>
+                                        )}
                                     </button>
                                 </form>
                             </div>
