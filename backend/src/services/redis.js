@@ -2,7 +2,12 @@ const Redis = require('ioredis');
 
 // Connect to Redis (defaults to localhost:6379)
 const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
-    retryStrategy: (times) => Math.min(times * 50, 2000)
+    retryStrategy: (times) => Math.min(times * 50, 2000),
+    maxRetriesPerRequest: null,
+});
+
+redis.on('error', (err) => {
+    // Suppress console output to stop flooding logs if redis is down
 });
 
 // Lua Script for Rolling Window Rate Limit

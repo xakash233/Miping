@@ -18,6 +18,9 @@ const startServer = async () => {
         app.listen(PORT, () => {
             console.log(`App running on port ${PORT}...`);
         });
+        app.get('/health', (req, res) => {
+            res.status(200).json({ status: 'UP', timestamp: new Date() });
+        });
     } catch (err) {
         console.error('UNHANDLED EXCEPTION! 💥 Shutting down...');
         console.error(err.name, err.message);

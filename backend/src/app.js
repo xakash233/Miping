@@ -52,6 +52,14 @@ app.get('/health', (req, res) => {
     res.status(200).json({ status: 'UP', timestamp: new Date() });
 });
 
+// Root route
+app.get('/', (req, res) => {
+    res.status(200).json({ status: 'UP', message: 'Miping API Server is running', timestamp: new Date() });
+});
+
+// System Routes
+app.use('/system', require('./modules/system/routes'));
+
 // 404 Handler
 app.all(/(.*)/, (req, res, next) => {
     next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
