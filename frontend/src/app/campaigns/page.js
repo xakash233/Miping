@@ -28,7 +28,7 @@ export default function CampaignsPage() {
     const fetchHistory = async () => {
         try {
             const token = Cookies.get('token');
-            const res = await axios.get('http://localhost:8000/messages/history', {
+            const res = await axios.get('${process.env.NEXT_PUBLIC_API_URL}/messages/history', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.data.success) setJobs(res.data.data);
@@ -43,8 +43,8 @@ export default function CampaignsPage() {
         try {
             const token = Cookies.get('token');
             const [cRes, tRes] = await Promise.all([
-                axios.get('http://localhost:8000/contacts', { headers: { Authorization: `Bearer ${token}` } }),
-                axios.get('http://localhost:8000/templates', { headers: { Authorization: `Bearer ${token}` } })
+                axios.get('${process.env.NEXT_PUBLIC_API_URL}/contacts', { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get('${process.env.NEXT_PUBLIC_API_URL}/templates', { headers: { Authorization: `Bearer ${token}` } })
             ]);
             setContacts(cRes.data.data);
             setTemplates(tRes.data.data.filter(t => t.status === 'APPROVED' || t.status === 'PENDING'));
@@ -65,7 +65,7 @@ export default function CampaignsPage() {
 
         try {
             const token = Cookies.get('token');
-            const res = await axios.post('http://localhost:8000/messages/schedule', formData, {
+            const res = await axios.post('${process.env.NEXT_PUBLIC_API_URL}/messages/schedule', formData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 

@@ -21,8 +21,8 @@ export default function WalletPage() {
         try {
             const token = Cookies.get('token');
             const [bRes, tRes] = await Promise.all([
-                axios.get('http://localhost:8000/billing/balance', { headers: { Authorization: `Bearer ${token}` } }),
-                axios.get('http://localhost:8000/billing/transactions', { headers: { Authorization: `Bearer ${token}` } })
+                axios.get('${process.env.NEXT_PUBLIC_API_URL}/billing/balance', { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get('${process.env.NEXT_PUBLIC_API_URL}/billing/transactions', { headers: { Authorization: `Bearer ${token}` } })
             ]);
             setBalance(bRes.data.data.balance);
             setTransactions(tRes.data.data);
@@ -41,7 +41,7 @@ export default function WalletPage() {
         try {
             const token = Cookies.get('token');
             // In a real app, this would trigger Razorpay
-            await axios.post('http://localhost:8000/billing/add-credits', { amount }, {
+            await axios.post('${process.env.NEXT_PUBLIC_API_URL}/billing/add-credits', { amount }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setShowModal(false);

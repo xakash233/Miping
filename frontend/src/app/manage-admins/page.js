@@ -29,7 +29,7 @@ export default function ManageAdminsPage() {
     const fetchTenants = async () => {
         try {
             const token = Cookies.get('token');
-            const res = await axios.get('http://localhost:8000/admin/tenants', {
+            const res = await axios.get('${process.env.NEXT_PUBLIC_API_URL}/admin/tenants', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.data.success) setTenants(res.data.data);
@@ -47,7 +47,7 @@ export default function ManageAdminsPage() {
         setSubmitting(true);
         try {
             const token = Cookies.get('token');
-            await axios.post('http://localhost:8000/admin/tenants', formData, {
+            await axios.post('${process.env.NEXT_PUBLIC_API_URL}/admin/tenants', formData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setFormData({ tenantName: '', adminEmail: '', adminPassword: '', adminFullName: '', countryCode: 'IN' });
@@ -70,7 +70,7 @@ export default function ManageAdminsPage() {
 
         try {
             const token = Cookies.get('token');
-            await axios.delete(`http://localhost:8000/admin/tenants/${tenantToDelete.id}`, {
+            await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants/${tenantToDelete.id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setShowDeleteModal(false);

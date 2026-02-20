@@ -27,7 +27,7 @@ export default function LoginPage() {
 
         try {
             // Assuming Backend is running on port 8000
-            const response = await axios.post('http://localhost:8000/auth/login', {
+            const response = await axios.post('${process.env.NEXT_PUBLIC_API_URL}/auth/login', {
                 email: formData.email,
                 password: formData.password
             });

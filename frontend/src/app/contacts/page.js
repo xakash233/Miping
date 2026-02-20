@@ -20,7 +20,7 @@ export default function ContactsPage() {
     const fetchContacts = async () => {
         try {
             const token = Cookies.get('token');
-            const response = await axios.get('http://localhost:8000/contacts', {
+            const response = await axios.get('${process.env.NEXT_PUBLIC_API_URL}/contacts', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (response.data.success) {
@@ -51,7 +51,7 @@ export default function ContactsPage() {
                 return { phone, name: name || 'Anonymous' };
             });
 
-            const res = await axios.post('http://localhost:8000/contacts/import', {
+            const res = await axios.post('${process.env.NEXT_PUBLIC_API_URL}/contacts/import', {
                 contacts: parsedContacts
             }, {
                 headers: { Authorization: `Bearer ${token}` }

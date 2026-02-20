@@ -26,7 +26,7 @@ export default function TemplatesPage() {
     const fetchTemplates = async () => {
         try {
             const token = Cookies.get('token');
-            const res = await axios.get('http://localhost:8000/templates', {
+            const res = await axios.get('${process.env.NEXT_PUBLIC_API_URL}/templates', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.data.success) {
@@ -56,7 +56,7 @@ export default function TemplatesPage() {
                 variables: [] // TODO: Extract variables
             };
 
-            const res = await axios.post('http://localhost:8000/templates', payload, {
+            const res = await axios.post('${process.env.NEXT_PUBLIC_API_URL}/templates', payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
