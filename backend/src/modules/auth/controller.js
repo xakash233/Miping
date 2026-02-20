@@ -39,6 +39,12 @@ exports.initSignup = catchAsync(async (req, res, next) => {
     res.status(200).json({ success: true, ...result });
 });
 
+exports.createOrder = catchAsync(async (req, res, next) => {
+    const { verificationToken, planId } = req.body;
+    const result = await authService.createSignupOrder(verificationToken, planId);
+    res.status(200).json({ success: true, data: result });
+});
+
 exports.verifyOTP = catchAsync(async (req, res, next) => {
     const { email, otp } = req.body;
     const result = await authService.verifyOTP(email, otp);

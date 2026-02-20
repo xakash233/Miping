@@ -9,6 +9,7 @@ router.post('/login', authController.login);
 // Self-Service Flow
 router.post('/signup/init', authController.initSignup);
 router.post('/signup/verify', authController.verifyOTP);
+router.post('/signup/create-order', authController.createOrder);
 router.post('/signup/complete', authController.completeSignup);
 
 // Debug

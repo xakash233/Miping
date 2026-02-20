@@ -77,18 +77,71 @@ function SignupFlow() {
 
     const handlePayment = async () => {
         setLoading(true);
+        setError('');
         try {
-            // Simulate Payment Processing
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
-            await axios.post('/auth/signup/complete', {
+            // 1. Fetch Order from backend
+            const { data } = await axios.post('/auth/signup/create-order', {
                 verificationToken,
-                paymentData: { method: 'card', status: 'success' }
+                planId: formData.planId
             });
-            setStep(4);
+
+            const { order, key } = data.data;
+
+            // 2. Load Razorpay Script if not loaded
+            if (!window.Razorpay) {
+                await new Promise((resolve) => {
+                    const script = document.createElement('script');
+                    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+                    script.onload = resolve;
+                    document.body.appendChild(script);
+                });
+            }
+
+            // 3. Initialize Razorpay
+            const options = {
+                key,
+                amount: order.amount,
+                currency: order.currency,
+                name: 'Miping',
+                description: 'Subscription Activation',
+                order_id: order.id,
+                handler: async function (response) {
+                    try {
+                        setLoading(true);
+                        // 4. Verify Payment & Complete
+                        await axios.post('/auth/signup/complete', {
+                            verificationToken,
+                            paymentData: {
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature
+                            }
+                        });
+                        setStep(4);
+                    } catch (err) {
+                        setError('Account creation failed during payment verification. Contact Support.');
+                    } finally {
+                        setLoading(false);
+                    }
+                },
+                prefill: {
+                    name: formData.adminName,
+                    email: formData.email,
+                },
+                theme: {
+                    color: '#4F46E5',
+                },
+            };
+
+            const rzp = new window.Razorpay(options);
+            rzp.on('payment.failed', function (response) {
+                setError('Payment failed. Please try again.');
+                setLoading(false);
+            });
+            rzp.open();
+
         } catch (err) {
-            setError('Payment succeeded but account creation failed. Please contact support.');
-        } finally {
+            setError(err.response?.data?.message || 'Failed to initialize payment. Ensure RAZORPAY_KEY_ID is set in the backend.');
             setLoading(false);
         }
     };

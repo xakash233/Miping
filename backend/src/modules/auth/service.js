@@ -114,6 +114,39 @@ class AuthService {
         };
     }
 
+    async createSignupOrder(verificationToken, planId) {
+        // 1. Verify token
+        let decoded;
+        try {
+            const publicPem = fs.readFileSync(path.join(process.cwd(), 'keys', 'public.pem'), 'utf8');
+            decoded = jwt.verify(verificationToken, publicPem, { algorithms: ['RS256'] });
+        } catch (e) {
+            throw new AppError('Invalid verification session', 400);
+        }
+
+        // 2. Fetch Plan
+        const { rows } = await db.query('SELECT * FROM plans WHERE id = $1', [planId]);
+        if (rows.length === 0) throw new AppError('Plan not found', 404);
+        const plan = rows[0];
+
+        // 3. Create Razorpay Order
+        const Razorpay = require('razorpay');
+        const razorpay = new Razorpay({
+            key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_12345',
+            key_secret: process.env.RAZORPAY_KEY_SECRET || 'secret123'
+        });
+
+        const options = {
+            amount: Math.round(plan.price * 100), // amount in paisa
+            currency: "INR",
+            receipt: `signup_${Date.now()}`,
+            payment_capture: 1
+        };
+
+        const order = await razorpay.orders.create(options);
+        return { order, key: process.env.RAZORPAY_KEY_ID || 'rzp_test_12345' };
+    }
+
     async completeRegistration(verificationToken, paymentData) {
         // 1. Verify verification token
         let decoded;
@@ -138,6 +171,20 @@ class AuthService {
             }
         }
 
+        // 2.5 Verify Razorpay Payment (if provided)
+        if (paymentData && paymentData.razorpay_payment_id) {
+            const crypto = require('crypto');
+            const secret = process.env.RAZORPAY_KEY_SECRET || 'secret123';
+            const generated_signature = crypto
+                .createHmac('sha256', secret)
+                .update(paymentData.razorpay_order_id + "|" + paymentData.razorpay_payment_id)
+                .digest('hex');
+
+            if (generated_signature !== paymentData.razorpay_signature) {
+                throw new AppError('Payment verification failed', 400, 'INVALID_SIGNATURE');
+            }
+        }
+
         // 3. Create Tenant & User
         const result = await this.registerTenant({
             tenantName: regData.tenantName,
@@ -149,6 +196,15 @@ class AuthService {
 
         // 4. Assign Plan
         await planService.assignPlan(result.tenant.id, regData.planId, 'PAID');
+
+        // 4.5 Insert payment into DB (if razorpay info is present)
+        if (paymentData && paymentData.razorpay_payment_id) {
+            const planQuery = await db.query('SELECT price FROM plans WHERE id = $1', [regData.planId]);
+            const planAmount = planQuery.rows[0]?.price || 0;
+            await db.query(`INSERT INTO payments (tenant_id, razorpay_order_id, razorpay_payment_id, amount, status) VALUES ($1, $2, $3, $4, 'SUCCESS')`,
+                [result.tenant.id, paymentData.razorpay_order_id, paymentData.razorpay_payment_id, planAmount]
+            );
+        }
 
         // 5. Send Final Welcome Email with ID/Password
         try {
