@@ -8,39 +8,18 @@ const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID;
 const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET;
 
 /**
- * Connects a WhatsApp Business Account via Embedded Signup flow.
- * Exchanges short-lived token for long-lived token, validates, encrypted and stores.
+ * Connects a WhatsApp Business Account.
+ * Validates, encrypts and stores the permanent token.
  */
-async function connectAccount(tenantId, { shortLivedToken, phoneNumberId, wabaId }) {
-    if (!shortLivedToken || !phoneNumberId || !wabaId) {
-        throw new AppError('Missing required fields: shortLivedToken, phoneNumberId, wabaId', 400);
+async function connectAccount(tenantId, { permanentToken, phoneNumberId, wabaId }) {
+    if (!permanentToken || !phoneNumberId || !wabaId) {
+        throw new AppError('Missing required fields: permanentToken, phoneNumberId, wabaId', 400);
     }
 
     try {
-        // 1. Exchange for Long-Lived Token
-        // If App ID/Secret not configured, we might skip this in dev/demo mode or throw error.
-        // For production, this is mandatory.
-        let accessToken = shortLivedToken;
-        let expiresAt = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000); // Default 60 days
-
-        if (FACEBOOK_APP_ID && FACEBOOK_APP_SECRET) {
-            const exchangeRes = await axios.get(`https://graph.facebook.com/${META_API_VERSION}/oauth/access_token`, {
-                params: {
-                    grant_type: 'fb_exchange_token',
-                    client_id: FACEBOOK_APP_ID,
-                    client_secret: FACEBOOK_APP_SECRET,
-                    fb_exchange_token: shortLivedToken
-                }
-            });
-
-            accessToken = exchangeRes.data.access_token;
-            // standard expires_in is usually seconds
-            if (exchangeRes.data.expires_in) {
-                expiresAt = new Date(Date.now() + exchangeRes.data.expires_in * 1000);
-            }
-        } else {
-            console.warn('Facebook App ID/Secret not configured. Using short-lived token directly (Not recommended for production).');
-        }
+        // 1. Set Token and generic long expiration (System Tokens don't expire)
+        let accessToken = permanentToken;
+        let expiresAt = new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000); // 10 years for permanent token
 
         // 2. Validate Token & Permissions (Optional but recommended)
         // const debugRes = await axios.get(...)

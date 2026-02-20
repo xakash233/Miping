@@ -4,9 +4,9 @@ import axios from '@/lib/axios';
 import {
     MessageSquare, Users as UsersIcon, Send,
     TrendingUp, Activity, CreditCard, ChevronRight,
-    CheckCircle, Loader2, Sparkles
+    CheckCircle, Loader2, Sparkles, Smartphone, Key, Hash
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const StatCard = ({ icon: Icon, label, value, trend, color, loading }) => (
     <motion.div
@@ -45,12 +45,31 @@ export default function Dashboard() {
         activity: []
     });
     const [loading, setLoading] = useState(true);
+    const [metaConnected, setMetaConnected] = useState(true);
+    const [showMetaModal, setShowMetaModal] = useState(false);
+    const [metaLoading, setMetaLoading] = useState(false);
+    const [metaError, setMetaError] = useState('');
+    const [metaForm, setMetaForm] = useState({
+        permanentToken: '',
+        phoneNumberId: '',
+        wabaId: ''
+    });
 
     useEffect(() => {
         const fetchDashboard = async () => {
             try {
                 const res = await axios.get('/dashboard/stats');
                 setData(res.data.data);
+
+                try {
+                    await axios.get('/whatsapp/status');
+                    setMetaConnected(true);
+                } catch (waErr) {
+                    if (waErr.response?.status === 404) {
+                        setMetaConnected(false);
+                        setShowMetaModal(true);
+                    }
+                }
             } catch (error) {
                 console.error("Dashboard Fetch Error:", error);
             } finally {
@@ -59,6 +78,21 @@ export default function Dashboard() {
         };
         fetchDashboard();
     }, []);
+
+    const handleMetaConnect = async (e) => {
+        e.preventDefault();
+        setMetaLoading(true);
+        setMetaError('');
+        try {
+            await axios.post('/whatsapp/connect', metaForm);
+            setMetaConnected(true);
+            setShowMetaModal(false);
+        } catch (err) {
+            setMetaError(err.response?.data?.message || 'Failed to connect Meta account.');
+        } finally {
+            setMetaLoading(false);
+        }
+    };
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -176,6 +210,88 @@ export default function Dashboard() {
                     </div>
                 </div>
             </div>
+
+            {/* Meta Connection Modal */}
+            <AnimatePresence>
+                {showMetaModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden"
+                        >
+                            <div className="p-8">
+                                <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-6">
+                                    <Smartphone size={24} />
+                                </div>
+                                <h2 className="text-2xl font-bold text-gray-900 mb-2">Connect WhatsApp API</h2>
+                                <p className="text-gray-500 mb-6 text-sm">
+                                    To unlock your dashboard and start sending campaigns, please securely connect your Meta credentials.
+                                </p>
+
+                                {metaError && (
+                                    <div className="mb-6 p-3 bg-red-50 text-red-600 text-sm rounded-lg font-medium">{metaError}</div>
+                                )}
+
+                                <form onSubmit={handleMetaConnect} className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">WhatsApp Business Account ID</label>
+                                        <div className="relative">
+                                            <Hash className="absolute left-3 top-3 text-gray-400" size={18} />
+                                            <input
+                                                type="text"
+                                                required
+                                                value={metaForm.wabaId}
+                                                onChange={(e) => setMetaForm({ ...metaForm, wabaId: e.target.value })}
+                                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition font-medium text-sm"
+                                                placeholder="e.g. 1048291039485"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Phone Number ID</label>
+                                        <div className="relative">
+                                            <Smartphone className="absolute left-3 top-3 text-gray-400" size={18} />
+                                            <input
+                                                type="text"
+                                                required
+                                                value={metaForm.phoneNumberId}
+                                                onChange={(e) => setMetaForm({ ...metaForm, phoneNumberId: e.target.value })}
+                                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition font-medium text-sm"
+                                                placeholder="e.g. 1198472948574"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Permanent Access Token</label>
+                                        <div className="relative">
+                                            <Key className="absolute left-3 top-3 text-gray-400" size={18} />
+                                            <input
+                                                type="password"
+                                                required
+                                                value={metaForm.permanentToken}
+                                                onChange={(e) => setMetaForm({ ...metaForm, permanentToken: e.target.value })}
+                                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition font-medium text-sm"
+                                                placeholder="EAAGm0..."
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        disabled={metaLoading}
+                                        className="w-full mt-6 bg-indigo-600 text-white font-bold py-4 rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 flex items-center justify-center gap-2"
+                                    >
+                                        {metaLoading ? <Loader2 className="animate-spin" size={20} /> : 'Securely Connect API'}
+                                    </button>
+                                </form>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

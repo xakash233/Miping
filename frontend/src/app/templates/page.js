@@ -22,6 +22,27 @@ export default function TemplatesPage() {
         language: 'en_US',
         body: ''
     });
+    const [variableMappings, setVariableMappings] = useState({});
+
+    // Available values for variables (10 values as requested)
+    const VARIABLE_OPTIONS = [
+        { value: 'contact.name', label: 'Contact Name' },
+        { value: 'contact.phone', label: 'Contact Phone' },
+        { value: 'custom.company', label: 'Company Name' },
+        { value: 'custom.orderId', label: 'Order ID' },
+        { value: 'custom.trackingNumber', label: 'Tracking Number' },
+        { value: 'custom.amount', label: 'Amount Due' },
+        { value: 'custom.date', label: 'Date/Time' },
+        { value: 'custom.field1', label: 'Custom Field 1' },
+        { value: 'custom.field2', label: 'Custom Field 2' },
+        { value: 'custom.field3', label: 'Custom Field 3' }
+    ];
+
+    // Detect variables {{1}} to {{10}}
+    const detectedVariables = Array.from(new Set(formData.body.match(/{{\d+}}/g) || []))
+        .map(v => parseInt(v.replace(/\D/g, '')))
+        .filter(n => n >= 1 && n <= 10)
+        .sort((a, b) => a - b);
 
     const fetchTemplates = async () => {
         try {
@@ -48,12 +69,17 @@ export default function TemplatesPage() {
 
         try {
             const token = Cookies.get('token');
+
+            // Format variables as an array matching the order of 1, 2, 3...
+            // Or save as JSON depending on backend. We'll send an array of mapped values.
+            const mappedVariables = detectedVariables.map(num => variableMappings[num] || 'custom.field1');
+
             const payload = {
                 name: formData.name,
                 category: formData.category,
                 language: formData.language,
                 content: formData.body,
-                variables: [] // TODO: Extract variables
+                variables: mappedVariables
             };
 
             const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/templates`, payload, {
@@ -63,6 +89,7 @@ export default function TemplatesPage() {
             if (res.data.success) {
                 setShowModal(false);
                 setFormData({ name: '', category: 'MARKETING', language: 'en_US', body: '' });
+                setVariableMappings({});
                 fetchTemplates();
             }
         } catch (err) {
@@ -184,15 +211,42 @@ export default function TemplatesPage() {
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Content (Use {'{{1}}'}, {'{{2}}'} for variables)</label>
-                                <textarea
-                                    className="w-full px-4 py-4 bg-gray-50 border border-transparent focus:border-blue-500 focus:bg-white rounded-2xl outline-none transition-all text-sm font-medium min-h-[120px]"
-                                    placeholder="Hello {{1}}, thanks for choosing us!"
-                                    value={formData.body}
-                                    onChange={(e) => setFormData({ ...formData, body: e.target.value })}
-                                    required
-                                />
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Content (Use {'{{1}}'}, {'{{2}}'} for variables)</label>
+                                    <textarea
+                                        className="w-full px-4 py-4 bg-gray-50 border border-transparent focus:border-blue-500 focus:bg-white rounded-2xl outline-none transition-all text-sm font-medium min-h-[120px]"
+                                        placeholder="Hello {{1}}, thanks for choosing us!"
+                                        value={formData.body}
+                                        onChange={(e) => setFormData({ ...formData, body: e.target.value })}
+                                        required
+                                    />
+                                </div>
+
+                                {/* Dynamic Variable Mapping Dropdowns */}
+                                {detectedVariables.length > 0 && (
+                                    <div className="p-4 bg-blue-50/50 rounded-2xl space-y-3 border border-blue-100">
+                                        <p className="text-xs font-bold text-blue-800 uppercase tracking-wider mb-2">Map Variables</p>
+                                        {detectedVariables.map((num) => (
+                                            <div key={num} className="flex items-center gap-4">
+                                                <div className="w-12 text-center text-sm font-bold text-indigo-600 bg-indigo-100 py-2 rounded-xl">
+                                                    {`{{${num}}}`}
+                                                </div>
+                                                <select
+                                                    className="flex-1 px-4 py-3 bg-white border border-blue-200 focus:border-blue-500 rounded-xl outline-none transition-all text-sm font-bold text-gray-700"
+                                                    value={variableMappings[num] || ''}
+                                                    onChange={(e) => setVariableMappings({ ...variableMappings, [num]: e.target.value })}
+                                                    required
+                                                >
+                                                    <option value="" disabled>Select Mapping</option>
+                                                    {VARIABLE_OPTIONS.map(opt => (
+                                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             <button
