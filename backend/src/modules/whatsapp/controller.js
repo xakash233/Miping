@@ -10,7 +10,7 @@ exports.connectAccount = catchAsync(async (req, res, next) => {
     const { permanentToken, phoneNumberId, wabaId } = req.body;
     // Assuming auth middleware sets req.user/tenant
     // We need tenantId from authenticated session
-    const tenantId = req.user?.tenant_id || req.body.tenantId;
+    const tenantId = req.tenant?.id || req.body.tenantId;
 
     if (!tenantId) {
         return next(new AppError('Tenant ID is required (Auth context missing)', 401));
@@ -36,7 +36,7 @@ exports.connectAccount = catchAsync(async (req, res, next) => {
  * Get details of connected account
  */
 exports.getAccountStatus = catchAsync(async (req, res, next) => {
-    const tenantId = req.user?.tenant_id || req.body.tenantId || req.query.tenantId;
+    const tenantId = req.tenant?.id || req.body.tenantId || req.query.tenantId;
     if (!tenantId) return next(new AppError('Tenant ID required', 400));
 
     // We don't expose full token, just metadata
