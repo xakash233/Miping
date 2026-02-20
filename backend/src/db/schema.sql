@@ -118,6 +118,15 @@ CREATE TABLE IF NOT EXISTS suppression_list (
 );
 
 -- Indexes for performance
-CREATE INDEX idx_contacts_tenant_phone ON contacts(tenant_id, phone_e164);
-CREATE INDEX idx_message_jobs_schedule_status ON message_jobs(status, schedule_time_utc) WHERE status = 'PENDING';
-CREATE INDEX idx_messages_meta_id ON messages(meta_message_id);
+CREATE INDEX IF NOT EXISTS idx_contacts_tenant_phone ON contacts(tenant_id, phone_e164);
+CREATE INDEX IF NOT EXISTS idx_message_jobs_schedule_status ON message_jobs(status, schedule_time_utc) WHERE status = 'PENDING';
+CREATE INDEX IF NOT EXISTS idx_messages_meta_id ON messages(meta_message_id);
+
+-- 9. REGISTRATION OTPS (For Email Verification)
+CREATE TABLE IF NOT EXISTS registration_otps (
+    email VARCHAR(255) PRIMARY KEY,
+    otp VARCHAR(10) NOT NULL,
+    data TEXT NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);

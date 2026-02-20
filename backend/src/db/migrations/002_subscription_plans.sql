@@ -27,11 +27,18 @@ CREATE TABLE IF NOT EXISTS subscriptions (
 );
 
 -- Add indexes
-CREATE INDEX idx_subscriptions_tenant_id ON subscriptions(tenant_id);
-CREATE INDEX idx_subscriptions_active ON subscriptions(is_active);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_tenant_id ON subscriptions(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_active ON subscriptions(is_active);
 
--- Seed some default plans
-INSERT INTO plans (name, description, price, message_limit, contact_limit, duration_days) VALUES
-('Starter', 'For small businesses', 499.00, 1000, 500, 30),
-('Professional', 'For growing teams', 1499.00, 10000, 2500, 30),
-('Enterprise', 'Unlimited scale for large organizations', 4999.00, 100000, 10000, 30);
+-- Seed some default plans if they do not exist
+INSERT INTO plans (name, description, price, message_limit, contact_limit, duration_days) 
+SELECT 'Starter', 'For small businesses', 499.00, 1000, 500, 30
+WHERE NOT EXISTS (SELECT 1 FROM plans WHERE name = 'Starter');
+
+INSERT INTO plans (name, description, price, message_limit, contact_limit, duration_days) 
+SELECT 'Professional', 'For growing teams', 1499.00, 10000, 2500, 30
+WHERE NOT EXISTS (SELECT 1 FROM plans WHERE name = 'Professional');
+
+INSERT INTO plans (name, description, price, message_limit, contact_limit, duration_days) 
+SELECT 'Enterprise', 'Unlimited scale for large organizations', 4999.00, 100000, 10000, 30
+WHERE NOT EXISTS (SELECT 1 FROM plans WHERE name = 'Enterprise');
