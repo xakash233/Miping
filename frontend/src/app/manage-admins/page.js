@@ -29,7 +29,7 @@ export default function ManageAdminsPage() {
     const fetchTenants = async () => {
         try {
             const token = Cookies.get('token');
-            const res = await axios.get('${process.env.NEXT_PUBLIC_API_URL}/admin/tenants', {
+            const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.data.success) setTenants(res.data.data);
@@ -47,7 +47,7 @@ export default function ManageAdminsPage() {
         setSubmitting(true);
         try {
             const token = Cookies.get('token');
-            await axios.post('${process.env.NEXT_PUBLIC_API_URL}/admin/tenants', formData, {
+            await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants`, formData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setFormData({ tenantName: '', adminEmail: '', adminPassword: '', adminFullName: '', countryCode: 'IN' });

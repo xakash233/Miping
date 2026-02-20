@@ -42,8 +42,8 @@ export default function AnalyticsPage() {
             const token = Cookies.get('token');
             const role = Cookies.get('user_role');
             const endpoint = role === 'SUPER_ADMIN'
-                ? '${process.env.NEXT_PUBLIC_API_URL}/admin/dashboard'
-                : '${process.env.NEXT_PUBLIC_API_URL}/tenants/dashboard';
+                ? `${process.env.NEXT_PUBLIC_API_URL}/admin/dashboard`
+                : `${process.env.NEXT_PUBLIC_API_URL}/tenants/dashboard`;
 
             const res = await axios.get(endpoint, {
                 headers: { Authorization: `Bearer ${token}` }
