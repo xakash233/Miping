@@ -129,7 +129,14 @@ class AuthService {
         const { rows } = await db.query(`SELECT data FROM registration_otps WHERE email = $1`, [decoded.email]);
         if (rows.length === 0) throw new AppError('Registration data not found', 404);
 
-        const regData = rows[0].data;
+        let regData = rows[0].data;
+        if (typeof regData === 'string') {
+            try {
+                regData = JSON.parse(regData);
+            } catch (e) {
+                console.error("Failed to parse regData JSON:", e);
+            }
+        }
 
         // 3. Create Tenant & User
         const result = await this.registerTenant({
@@ -144,7 +151,11 @@ class AuthService {
         await planService.assignPlan(result.tenant.id, regData.planId, 'PAID');
 
         // 5. Send Final Welcome Email with ID/Password
-        await emailService.sendWelcomeEmail(regData.email, regData.adminName, regData.email, regData.password);
+        try {
+            await emailService.sendWelcomeEmail(regData.email, regData.adminName, regData.email, regData.password);
+        } catch (emailErr) {
+            console.error("Welcome email failed to send, but registration successful:", emailErr.message);
+        }
 
         // 6. Cleanup OTP
         await db.query(`DELETE FROM registration_otps WHERE email = $1`, [decoded.email]);
