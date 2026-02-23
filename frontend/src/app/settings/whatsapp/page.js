@@ -46,23 +46,20 @@ export default function WhatsAppSettings() {
     };
 
     const launchWhatsAppSignup = () => {
-        const configId = 'Your_Config_ID'; // Ideally from backend, or hardcoded for now if static
-        // Start Embedded Signup
+        setMetaError('');
+        setMetaLoading(true);
+
         window.FB.login(function (response) {
             if (response.authResponse) {
-                const code = response.authResponse.code;
-                // Wait for message from popup containing WABA selection
-                // Actually, clean Embedded Signup v2 returns code if using system user access token flow
-                // Or we use the standard OAuth flow.
-
-                // For Embedded Signup, we typically listen for message event or use returning payload
-                // Assuming standard OAuth flow for simplicity here:
-                connectAccount(code);
+                const accessToken = response.authResponse.accessToken;
+                // Auto-connect with just the token. Backend will discover IDs!
+                handleMetaConnect(accessToken);
             } else {
-                console.log('User cancelled login or did not fully authorize.');
+                setMetaError('User cancelled login or did not fully authorize.');
+                setMetaLoading(false);
             }
         }, {
-            scope: 'whatsapp_business_management,  whatsapp_business_messaging',
+            scope: 'business_management,whatsapp_business_management,whatsapp_business_messaging',
             extras: {
                 feature: 'whatsapp_embedded_signup',
                 sessionInfoVersion: '2',
@@ -70,29 +67,18 @@ export default function WhatsAppSettings() {
         });
     };
 
-    // Simplified fallback: Just paste token (Dev/Manual Mode) or use proper OAuth
-    // But since we built the backend for 'code', let's simulate the connect call
-    const connectAccount = async (code) => {
+    const handleMetaConnect = async (shortLivedToken) => {
         try {
-            // In real embedded signup, we also get wabaId and phoneNumberId from the flow callbacks
-            // For this implementation, we might need a more robust collection of those IDs
-            // For now, let's assume successful OAuth and we fetch IDs from Graph API in backend?
-            // Actually, backend expects { code, phoneNumberId, wabaId }.
-            // The Frontend SDK flow usually returns these via window message event.
-
-            // Placeholder for flow completion
-            alert('OAuth Code received: ' + code + '. Backend implementation requires full Embedded Signup flow data.');
-
-            // await axios.post('/whatsapp/connect', { code, ... });
-            // fetchData();
-        } catch (error) {
-            alert('Connection Failed');
+            await axios.post('/whatsapp/connect', {
+                shortLivedToken
+            });
+            fetchData(); // Refresh to get the connected status
+        } catch (err) {
+            setMetaError(err.response?.data?.message || 'Failed to connect WhatsApp account.');
+        } finally {
+            setMetaLoading(false);
         }
     };
-
-    // Since users struggle with full Embedded Signup Setup without HTTPS/App Review,
-    // I will simplify this to a "Status View" + "Manual Connect (if needed)"
-    // Or just "Plan View" + "Connection Status".
 
     return (
         <div className="p-6 max-w-4xl mx-auto">
@@ -162,19 +148,28 @@ export default function WhatsAppSettings() {
                 ) : (
                     <div className="text-center py-8">
                         <div className="mb-4 text-gray-500">
-                            <p>Connect your WhatsApp Business Account to start sending messages.</p>
+                            <p>Connect your WhatsApp Business Account to automatically sync settings and start sending messages.</p>
                         </div>
+
+                        {metaError && (
+                            <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl font-bold text-left">{metaError}</div>
+                        )}
+
                         <button
                             onClick={launchWhatsAppSignup}
-                            className="bg-[#1877F2] text-white px-6 py-3 rounded-lg font-bold hover:bg-[#166fe5] shadow-md transition flex items-center gap-2 mx-auto disabled:opacity-50"
-                            disabled={!FACEBOOK_APP_ID || FACEBOOK_APP_ID === 'YOUR_FB_APP_ID'}
+                            className="bg-[#1877F2] text-white px-8 py-4 rounded-xl font-bold hover:bg-[#166fe5] shadow-lg shadow-blue-100 transition flex items-center gap-3 mx-auto disabled:opacity-50"
+                            disabled={!FACEBOOK_APP_ID || FACEBOOK_APP_ID === 'YOUR_FB_APP_ID' || metaLoading}
                         >
-                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.791-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>
-                            Connect with Facebook
+                            {metaLoading ? 'Connecting...' : (
+                                <>
+                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.791-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>
+                                    Connect with Facebook
+                                </>
+                            )}
                         </button>
                         {(!FACEBOOK_APP_ID || FACEBOOK_APP_ID === 'YOUR_FB_APP_ID') && (
-                            <p className="text-xs text-red-500 mt-2">
-                                * Facebook App ID not configured in .env
+                            <p className="text-xs text-red-500 mt-3 font-semibold">
+                                * Missing Meta Application ID. Please contact support.
                             </p>
                         )}
                     </div>

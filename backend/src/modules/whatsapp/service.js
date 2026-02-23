@@ -8,20 +8,22 @@ const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID;
 const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET;
 
 /**
- * Connects a WhatsApp Business Account via Embedded Signup flow.
- * Exchanges short-lived token for long-lived token, validates, encrypted and stores.
+ * Connects a WhatsApp Business Account via Embedded Signup flow or directly with Permanent Token.
+ * Validates, encrypts and stores the account details.
  */
-async function connectAccount(tenantId, { shortLivedToken, phoneNumberId, wabaId }) {
-    if (!shortLivedToken || !phoneNumberId || !wabaId) {
-        throw new AppError('Missing required fields: shortLivedToken, phoneNumberId, wabaId', 400);
+async function connectAccount(tenantId, { shortLivedToken, permanentToken, phoneNumberId, wabaId }) {
+    if (!(shortLivedToken || permanentToken)) {
+        throw new AppError('Missing required fields: token', 400);
     }
 
     try {
-        // 1. Exchange for Long-Lived Token
-        let accessToken = shortLivedToken;
-        let expiresAt = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000); // 60 days default
+        let accessToken = permanentToken || shortLivedToken;
+        let expiresAt = permanentToken
+            ? new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000) // 10 years by default for system user
+            : new Date(Date.now() + 60 * 24 * 60 * 60 * 1000); // 60 days default
 
-        if (FACEBOOK_APP_ID && FACEBOOK_APP_SECRET) {
+        // 1. Exchange for Long-Lived Token ONLY if we don't already have a permanent token
+        if (!permanentToken && FACEBOOK_APP_ID && FACEBOOK_APP_SECRET) {
             try {
                 const exchangeRes = await axios.get(`https://graph.facebook.com/${META_API_VERSION}/oauth/access_token`, {
                     params: {
@@ -40,6 +42,52 @@ async function connectAccount(tenantId, { shortLivedToken, phoneNumberId, wabaId
             }
         }
 
+        // Auto-Discover IDs if not provided via Facebook Login
+        let autoWabaId = wabaId;
+        let autoPhoneNumberId = phoneNumberId;
+
+        if (!autoWabaId || !autoPhoneNumberId) {
+            try {
+                // Fetch User Businesses
+                const bizRes = await axios.get(`https://graph.facebook.com/${META_API_VERSION}/me/businesses?access_token=${accessToken}`);
+                const businesses = bizRes.data.data;
+
+                if (!businesses || businesses.length === 0) {
+                    throw new Error('No Business Manager linked to this Facebook Account.');
+                }
+
+                // Iterate businesses to find WABAs
+                let foundWaba = null;
+                let foundPhone = null;
+
+                for (const biz of businesses) {
+                    const wabaRes = await axios.get(`https://graph.facebook.com/${META_API_VERSION}/${biz.id}/owned_whatsapp_business_accounts?access_token=${accessToken}`);
+                    const wabas = wabaRes.data.data;
+
+                    if (wabas && wabas.length > 0) {
+                        foundWaba = wabas[0].id;
+                        const phoneRes = await axios.get(`https://graph.facebook.com/${META_API_VERSION}/${foundWaba}/phone_numbers?access_token=${accessToken}`);
+
+                        if (phoneRes.data.data && phoneRes.data.data.length > 0) {
+                            foundPhone = phoneRes.data.data[0].id; // Pick first phone
+                            break;
+                        }
+                    }
+                }
+
+                if (!foundWaba || !foundPhone) {
+                    throw new Error('Could not automatically find any WhatsApp Business Account or Phone Number associated with this login.');
+                }
+
+                autoWabaId = foundWaba;
+                autoPhoneNumberId = foundPhone;
+
+            } catch (discoveryErr) {
+                console.error("Auto-discovery failed:", discoveryErr?.response?.data || discoveryErr.message);
+                throw new AppError(`Failed to discover WABA: ${discoveryErr?.response?.data?.error?.message || discoveryErr.message}`, 400);
+            }
+        }
+
         // 2. Validate Token & Permissions (Optional but recommended)
         // const debugRes = await axios.get(...)
 
@@ -52,12 +100,13 @@ async function connectAccount(tenantId, { shortLivedToken, phoneNumberId, wabaId
         // 5. Build DTO
         const accountData = {
             tenant_id: tenantId,
-            waba_id: wabaId,
-            phone_number_id: phoneNumberId,
-            business_account_id: wabaId, // Usually same or linked
+            waba_id: autoWabaId,
+            phone_number_id: autoPhoneNumberId,
+            business_account_id: autoWabaId, // Usually same or linked
             access_token_enc: encryptedData,
-            token_iv: iv,
+            access_token_iv: iv,
             token_expires_at: expiresAt,
+            is_active: true,
             messaging_tier: 'TIER_1K', // Default, will be updated by webhook/polling
             quality_rating: 'GREEN'
         };

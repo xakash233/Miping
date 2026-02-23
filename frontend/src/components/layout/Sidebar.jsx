@@ -46,7 +46,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setUserRole(Cookies.get('user_role'));
-         
+
         setUserName(Cookies.get('user_name'));
         setMounted(true);
     }, []);
@@ -78,12 +78,13 @@ const Sidebar = ({ isOpen, onClose }) => {
             >
                 {/* Logo & Select App */}
                 <div className="p-4 space-y-4 shrink-0">
-                    <div className="flex items-center gap-3 px-2">
-                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                            V
-                        </div>
-                        <span className="text-xl font-black text-gray-800 tracking-tight uppercase">BVITE</span>
-                        <button onClick={onClose} className="md:hidden ml-auto text-gray-400 hover:text-gray-600">
+                    <div className="flex items-center justify-center relative mb-4">
+                        <img
+                            src="/miping-logo.png"
+                            alt="Miping Logo"
+                            className="h-16 w-auto object-contain"
+                        />
+                        <button onClick={onClose} className="md:hidden absolute right-0 text-gray-400 hover:text-gray-600">
                             <X size={20} />
                         </button>
                     </div>
@@ -128,7 +129,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                         <LogOut size={18} className="group-hover:scale-110 transition-transform" />
                         <span className="font-semibold text-[13px]">Logout</span>
                     </button>
-                    <p className="text-[10px] text-gray-400 text-center font-bold mt-4">© 2024 BVITE PREMIUM</p>
+                    <p className="text-[10px] text-gray-400 text-center font-bold mt-4">© {new Date().getFullYear()} Miping</p>
                 </div>
             </aside>
         </>

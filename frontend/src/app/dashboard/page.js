@@ -99,11 +99,6 @@ export default function Dashboard() {
 
     const handleMetaConnect = (e) => {
         e.preventDefault();
-        if (!metaForm.wabaId || !metaForm.phoneNumberId) {
-            setMetaError('Please enter WABA ID and Phone Number ID first.');
-            return;
-        }
-
         setMetaLoading(true);
         setMetaError('');
 
@@ -118,8 +113,6 @@ export default function Dashboard() {
                 const shortLivedToken = response.authResponse.accessToken;
 
                 axios.post('/whatsapp/connect', {
-                    wabaId: metaForm.wabaId,
-                    phoneNumberId: metaForm.phoneNumberId,
                     shortLivedToken: shortLivedToken
                 }).then(() => {
                     setMetaConnected(true);
@@ -133,7 +126,7 @@ export default function Dashboard() {
                 setMetaError('Facebook login was cancelled or failed.');
                 setMetaLoading(false);
             }
-        }, { scope: 'whatsapp_business_management,whatsapp_business_messaging' });
+        }, { scope: 'business_management,whatsapp_business_management,whatsapp_business_messaging' });
     };
 
     return (
@@ -276,34 +269,8 @@ export default function Dashboard() {
                                 )}
 
                                 <form onSubmit={handleMetaConnect} className="space-y-4">
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">WhatsApp Business Account ID</label>
-                                        <div className="relative">
-                                            <Hash className="absolute left-3 top-3 text-gray-400" size={18} />
-                                            <input
-                                                type="text"
-                                                required
-                                                value={metaForm.wabaId}
-                                                onChange={(e) => setMetaForm({ ...metaForm, wabaId: e.target.value })}
-                                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition font-medium text-sm"
-                                                placeholder="e.g. 1048291039485"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Phone Number ID</label>
-                                        <div className="relative">
-                                            <Smartphone className="absolute left-3 top-3 text-gray-400" size={18} />
-                                            <input
-                                                type="text"
-                                                required
-                                                value={metaForm.phoneNumberId}
-                                                onChange={(e) => setMetaForm({ ...metaForm, phoneNumberId: e.target.value })}
-                                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition font-medium text-sm"
-                                                placeholder="e.g. 1198472948574"
-                                            />
-                                        </div>
+                                    <div className="text-center pb-4 py-2 text-gray-500 font-medium leading-relaxed">
+                                        Click below to securely securely log in and automatically fetch your Business Account!
                                     </div>
 
                                     <button

@@ -4,10 +4,10 @@ const AppError = require('../../utils/AppError');
 
 /**
  * Handle incoming request to connect WhatsApp Business Account
- * Payload: { shortLivedToken, phoneNumberId, wabaId }
+ * Payload: { shortLivedToken, permanentToken, phoneNumberId, wabaId }
  */
 exports.connectAccount = catchAsync(async (req, res, next) => {
-    const { shortLivedToken, phoneNumberId, wabaId } = req.body;
+    const { shortLivedToken, permanentToken, phoneNumberId, wabaId } = req.body;
     // Assuming auth middleware sets req.user/tenant
     // We need tenantId from authenticated session
     const tenantId = req.tenant?.id || req.body.tenantId;
@@ -16,12 +16,17 @@ exports.connectAccount = catchAsync(async (req, res, next) => {
         return next(new AppError('Tenant ID is required (Auth context missing)', 401));
     }
 
-    if (!shortLivedToken || !phoneNumberId || !wabaId) {
-        return next(new AppError('Missing required fields: shortLivedToken, phoneNumberId, wabaId', 400));
+    if (!(shortLivedToken || permanentToken)) {
+        return next(new AppError('Missing required fields: token (shortLivedToken or permanentToken)', 400));
+    }
+
+    if (permanentToken && (!phoneNumberId || !wabaId)) {
+        return next(new AppError('Missing required fields: phoneNumberId and wabaId are required when using permanentToken', 400));
     }
 
     const result = await whatsappService.connectAccount(tenantId, {
         shortLivedToken,
+        permanentToken,
         phoneNumberId,
         wabaId
     });

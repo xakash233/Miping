@@ -12,11 +12,15 @@ const Header = ({ onMenuClick }) => {
     const [userRole, setUserRole] = useState('Admin');
     const [isDarkMode, setIsDarkMode] = useState(false);
 
+    const [mounted, setMounted] = useState(false);
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
+
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
-        setUserName(Cookies.get('user_name') || 'Michelle');
-         
+        setUserName(Cookies.get('user_name') || Cookies.get('admin_name') || 'Guest Auth');
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setUserRole(Cookies.get('user_role') || 'Admin');
+        setMounted(true);
     }, []);
 
     const toggleDarkMode = () => {
@@ -24,11 +28,21 @@ const Header = ({ onMenuClick }) => {
         document.documentElement.classList.toggle('dark');
     };
 
+    const handleLogout = () => {
+        Cookies.remove('token');
+        Cookies.remove('user_role');
+        Cookies.remove('user_name');
+        router.push('/login');
+    };
+
     const getBreadcrumbs = () => {
+        if (!pathname) return 'Home / Dashboard';
         const parts = pathname.split('/').filter(p => p);
         if (parts.length === 0) return 'Home / Dashboard';
         return `Home / ${parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' / ')}`;
     };
+
+    if (!mounted) return null; // Avoid Hydration error
 
     return (
         <header className="bg-white border-b border-gray-100 min-h-[70px] flex items-center justify-between px-6 sticky top-0 z-10 w-full shrink-0">
@@ -68,15 +82,9 @@ const Header = ({ onMenuClick }) => {
             {/* Right Section: Utility Icons & Profile */}
             <div className="flex items-center gap-2 md:gap-4">
                 <div className="flex items-center gap-1">
-                    <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-gray-50 rounded-xl transition-all">
-                        <LayoutGrid size={20} />
-                    </button>
                     <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-gray-50 rounded-xl transition-all relative">
                         <Bell size={20} />
                         <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-red-500 rounded-full border border-white"></span>
-                    </button>
-                    <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-gray-50 rounded-xl transition-all">
-                        <Globe size={20} />
                     </button>
                     <button onClick={toggleDarkMode} className="p-2 text-gray-400 hover:text-amber-500 hover:bg-gray-50 rounded-xl transition-all">
                         {isDarkMode ? <Moon size={20} /> : <Sun size={20} />}
@@ -87,18 +95,43 @@ const Header = ({ onMenuClick }) => {
                 </div>
 
                 {/* User Profile */}
-                <div className="flex items-center gap-3 pl-4 border-l border-gray-100">
+                <div className="relative flex items-center gap-3 pl-4 border-l border-gray-100">
                     <div className="text-right hidden sm:block">
                         <p className="text-sm font-black text-gray-800 leading-none mb-0.5">{userName}</p>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Pro Account</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{userRole}</p>
                     </div>
-                    <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm border-2 border-white shadow-sm ring-1 ring-gray-100 overflow-hidden cursor-pointer hover:ring-blue-200 transition-all">
+                    <div
+                        onClick={() => setIsProfileOpen(!isProfileOpen)}
+                        className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm border-2 border-white shadow-sm ring-1 ring-gray-100 overflow-hidden cursor-pointer hover:ring-blue-200 transition-all"
+                    >
                         <img
                             src={`https://ui-avatars.com/api/?name=${userName}&background=E0E7FF&color=4F46E5&bold=true`}
                             alt="User Profile"
                             className="w-full h-full object-cover"
                         />
                     </div>
+
+                    {/* Fake Dropdown */}
+                    {isProfileOpen && (
+                        <div className="absolute right-0 top-12 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
+                            <div className="px-4 py-2 border-b border-gray-50 mb-2">
+                                <p className="text-sm font-bold text-gray-800">{userName}</p>
+                                <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">{userRole}</p>
+                            </div>
+                            <button
+                                onClick={() => router.push('/settings')}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 hover:text-blue-600 font-semibold transition"
+                            >
+                                Account Settings
+                            </button>
+                            <button
+                                onClick={handleLogout}
+                                className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 font-semibold transition mt-1"
+                            >
+                                Sign Out
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </header>
