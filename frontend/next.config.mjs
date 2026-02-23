@@ -13,7 +13,7 @@ const nextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: "http://13.235.246.3/:path*",
+        destination: "http://13.126.14.189/:path*",
       },
     ];
   },
