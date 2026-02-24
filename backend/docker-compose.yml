@@ -7,18 +7,26 @@ services:
     restart: always
     ports:
       - "5000:5000"
+
+    # Load env
     env_file:
       - .env
+
+    # Extra overrides
     environment:
       - PORT=5000
       - DB_HOST=postgres
       - FRONTEND_URL=http://13.126.14.189:3001
+
     depends_on:
       - postgres
+
     networks:
       - app-network
+
+    # Mount Kafka cert folder
     volumes:
-      - ./ca.pem:/app/ca.pem
+      - ./certs:/app/certs
 
   postgres:
     image: postgres:15-alpine
