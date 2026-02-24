@@ -17,24 +17,24 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: 22
-          debug: true
           script: |
             cd ~/Miping/backend
 
             echo "Pull latest code"
-            git pull origin main
+            git fetch origin
+            git reset --hard origin/main
 
             echo "Create backend env"
             printf "%s\n" "${{ secrets.BACKEND_ENV }}" > .env
 
-            echo "Inject Kafka env variables"
-            echo "KAFKA_BOOTSTRAP=${{ secrets.KAFKA_BOOTSTRAP }}" >> .env
-            echo "KAFKA_USERNAME=${{ secrets.KAFKA_USERNAME }}" >> .env
-            echo "KAFKA_PASSWORD=${{ secrets.KAFKA_PASSWORD }}" >> .env
+            echo "Create cert folder"
+            mkdir -p certs
 
-            echo "Create Kafka certificate"
-            echo "${{ secrets.KAFKA_CA_CERT }}" > ca.pem
-            chmod 644 ca.pem
+            echo "Create Kafka certificates"
+            echo "${{ secrets.KAFKA_CA_CERT }}" > certs/ca.pem
+            echo "${{ secrets.KAFKA_SERVICE_KEY }}" > certs/service.key
+            echo "${{ secrets.KAFKA_SERVICE_CERT }}" > certs/service.cert
+            chmod 600 certs/*
 
             echo "Restart docker containers"
             docker compose down
