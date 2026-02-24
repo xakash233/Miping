@@ -20,12 +20,32 @@ jobs:
           debug: true
           script: |
             cd ~/Miping/backend
+
+            echo "Pull latest code"
             git pull origin main
-            echo "${{ secrets.BACKEND_ENV }}" > .env
+
+            echo "Create backend env"
+            printf "%s\n" "${{ secrets.BACKEND_ENV }}" > .env
+
+            echo "Inject Kafka env variables"
+            echo "KAFKA_BOOTSTRAP=${{ secrets.KAFKA_BOOTSTRAP }}" >> .env
+            echo "KAFKA_USERNAME=${{ secrets.KAFKA_USERNAME }}" >> .env
+            echo "KAFKA_PASSWORD=${{ secrets.KAFKA_PASSWORD }}" >> .env
+
+            echo "Create Kafka certificate"
+            echo "${{ secrets.KAFKA_CA_CERT }}" > ca.pem
+            chmod 644 ca.pem
+
+            echo "Restart docker containers"
             docker compose down
             docker compose up -d --build
-            echo "Waiting for PostgreSQL to start..."
+
+            echo "Waiting for PostgreSQL..."
             sleep 8
+
+            echo "Run DB scripts"
             docker compose exec -T backend node src/db/init.js
             docker compose exec -T backend node src/db/migrate.js
             docker compose exec -T backend node src/db/seed_superadmin.js
+
+            echo "Deployment finished"
